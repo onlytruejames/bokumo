@@ -1,7 +1,6 @@
 import soundfile as sf
 import numpy as np
 import copy
-import random
 
 class Audio:
     def __init__(self, noChannels=1, samplerate=44100):
@@ -12,7 +11,10 @@ class Audio:
         data, samplerate = sf.read(fname)
         if overwriteSampleRate:
             self.samplerate = samplerate
-        data = np.swapaxes(data, 0, 1)
+        if type(data[0]) != np.array:
+            data = np.array([data])
+        else:
+            data = np.swapaxes(data, 0, 1)
         self.channels = []
         for channel in data:
             self.channels.append(Channel(channel, samplerate=self.samplerate))
@@ -45,7 +47,7 @@ class Audio:
         try:
             assert newChannel.length == self.length
         except:
-            raise Exception("Could not add channel: incorrect length")
+            raise Exception("Could not add channel: lengths do not match")
 
     class __Iterator:
         def __init__(self, audio, blockSize, addRemainder=True):
@@ -79,6 +81,76 @@ class Audio:
     @property
     def length(self):
         return self.channels[0].length
+    
+    def matches(self, other):
+        try:
+            assert other.length == self.length
+        except:
+            raise Exception("Could not perform operation: lengths do not match")
+        try:
+            assert other.nChannels == self.nChannels
+        except:
+            raise Exception("Could not perform operation: number of channels does not match")
+
+    def __iadd__(self, other):
+        if type(other) == type(self):
+            self.matches(other)
+            for c in range(self.nChannels):
+                self.channels[c] += other.channels[c]
+        elif type(other) == int or type(other) == float:
+            for c in range(self.nChannels):
+                self.channels[c] += other
+        return self
+        
+    def __isub__(self, other):
+        if type(other) == type(self):
+            self.matches(other)
+            for c in range(self.nChannels):
+                self.channels[c] -= other.channels[c]
+        elif type(other) == int or type(other) == float:
+            for c in range(self.nChannels):
+                self.channels[c] -= other
+        return self
+    
+    def __imul__(self, other):
+        if type(other) == type(self):
+            self.matches(other)
+            for c in range(self.nChannels):
+                self.channels[c] *= other.channels[c]
+        elif type(other) == int or type(other) == float:
+            for c in range(self.nChannels):
+                self.channels[c] *= other
+        return self
+
+    def __itruediv__(self, other):
+        if type(other) == type(self):
+            self.matches(other)
+            for c in range(self.nChannels):
+                self.channels[c] /= other.channels[c]
+        elif type(other) == int or type(other) == float:
+            for c in range(self.nChannels):
+                self.channels[c] /= other
+        return self
+    
+    def __add__(self, other):
+        first = self.copy()
+        first += other
+        return first
+    
+    def __sub__(self, other):
+        first = self.copy()
+        first -= other
+        return first
+    
+    def __mul__(self, other):
+        first = self.copy()
+        first *= other
+        return first
+    
+    def __truediv__(self, other):
+        first = self.copy()
+        first /= other
+        return first
 
 class Channel:
     def __init__(self, data=None, samplerate=44100):
@@ -95,3 +167,31 @@ class Channel:
     @property
     def length(self):
         return len(self.data)
+    
+    def __iadd__(self, other):
+        if type(other) == type(self):
+            self.data += other.data
+        elif type(other) == int or type(other) == float:
+            self.data += other
+        return self
+    
+    def __isub__(self, other):
+        if type(other) == type(self):
+            self.data -= other.data
+        elif type(other) == int or type(other) == float:
+            self.data -= other
+        return self
+
+    def __imul__(self, other):
+        if type(other) == type(self):
+            self.data *= other.data
+        elif type(other) == int or type(other) == float:
+            self.data *= other
+        return self
+    
+    def __itruediv__(self, other):
+        if type(other) == type(self):
+            self.data /= other.data
+        elif type(other) == int or type(other) == float:
+            self.data /= other
+        return self
